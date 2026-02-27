@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.biblioteca.grpc";
+option java_outer_classname = "BibliotecaProto";
+
+service BibliotecaService {
+
+  // ---------- CLIENTE ----------
+  rpc VerLibros (Vacio) returns (ListaLibros);
+  rpc BuscarLibro (LibroIdRequest) returns (Libro);
+  rpc PrestarLibro (PrestamoRequest) returns (Respuesta);
+  rpc DevolverLibro (DevolucionRequest) returns (Respuesta);
+  rpc VerLibrosPrestados (UsuarioRequest) returns (ListaPrestamos);
+
+  // ---------- ADMIN (SEGURO) ----------
+  rpc CargarBaseDeDatos (AdminVacioRequest) returns (Respuesta);
+  rpc AgregarLibro (LibroAdminRequest) returns (Respuesta);
+  rpc EliminarLibro (LibroIdAdminRequest) returns (Respuesta);
+  rpc VerBiblioteca (AdminVacioRequest) returns (ListaLibros);
+  rpc VerLibrosRepetidos (AdminVacioRequest) returns (ListaLibros);
+}
+
+// ---------- Mensajes base ----------
+message Vacio {}
+
+message Respuesta {
+  bool ok = 1;
+  string mensaje = 2;
+}
+
+// ---------- Admin wrappers ----------
+message AdminVacioRequest {
+  string adminKey = 1;
+}
+
+message LibroAdminRequest {
+  string adminKey = 1;
+  LibroRequest libro = 2;
+}
+
+message LibroIdAdminRequest {
+  string adminKey = 1;
+  string isbn = 2;
+}
+
+// ---------- Libro ----------
+message LibroRequest {
+  string isbn = 1;
+  string titulo = 2;
+  string autor = 3;
+  string editorial = 4;
+  int32 anioPublicacion = 5;
+}
+
+message LibroIdRequest {
+  string isbn = 1;
+}
+
+message Libro {
+  string isbn = 1;
+  string titulo = 2;
+  string autor = 3;
+  string editorial = 4;
+  int32 anioPublicacion = 5;
+  string estado = 6;
+}
+
+message ListaLibros {
+  repeated Libro libros = 1;
+}
+
+// ---------- Usuario ----------
+message UsuarioRequest {
+  int32 idUsuario = 1;
+}
+
+// ---------- Préstamo ----------
+message PrestamoRequest {
+  int32 idUsuario = 1;
+  string isbn = 2;
+}
+
+message DevolucionRequest {
+  int32 idPrestamo = 1;
+}
+
+message Prestamo {
+  int32 idPrestamo = 1;
+  int32 idUsuario = 2;
+  string isbn = 3;
+  string fechaPrestamo = 4;
+  string fechaDevolucion = 5;
+  string estado = 6;
+}
+
+message ListaPrestamos {
+  repeated Prestamo prestamos = 1;
+}

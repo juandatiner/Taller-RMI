@@ -1,0 +1,73 @@
+@startuml
+' Enum de los estados del libro
+enum EstadoLibro {
+  prestado
+  disponible
+}
+enum EstadoPrestamo {
+  activo
+  devuelto
+}
+
+' Clases de lógica sin relaciones
+class SistemaAdmin {
+  +cargarBaseDeDatos() : void
+  +agregarLibro() : void
+  +eliminarLibro() : void
+  +buscarLibro() : void
+  +verBiblioteca() : void
+  +verLibrosRepetidos() : void
+}
+
+class SistemaCliente {
+  +pedirPrestado() : void
+  +devolverLibro() : void
+  +verLibros() : void
+  +verLibrosPrestados() :void
+  
+}
+
+' Clases de datos con relaciones
+
+class Libro {
+  -titulo : String
+  -autor : String
+  -editorial : String
+  -anioPublicacion : int
+  -isbn(PK) : String
+  -estado : EstadoLibro
+
+  +getters()
+  +setters()
+  +constructor()
+}
+
+class Usuario {
+  -nombre : String
+  -apellido : String
+  -idUsuario (PK) : int
+  -email : String
+  -telefono : String
+
+  +getters()
+  +setters()
+  +constructor()
+}
+
+class Prestamo {
+  -idUsuario (FK): int
+  -isbn (FK): String
+  -idPrestamo (PK) : int
+  -fechaPrestamo : Date
+  -fechaDevolucion : Date
+  -estado : EstadoPrestamo
+
+  +getters()
+  +setters()
+  +constructor()
+}
+' Relaciones entre clases de datos
+Usuario "1" --> "N" Prestamo : presta
+Libro "1" --> "N" Prestamo : presta
+
+@enduml

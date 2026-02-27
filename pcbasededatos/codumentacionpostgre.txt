@@ -1,0 +1,12 @@
+primero pings
+luego sudo apt update 
+luego sudo apt install postgresql
+luego me meto en la app con sudo -u postgres postgresql
+luego creacion de diagrama de clases con 2 sistemas uno cliente y admin y los datos seran libro usuario y prestamo con sus foreign keys y primary keys
+luego hicimos @fase1scriptsCreacionDeTablas y creamos las fase1scriptsCreacionDeTablas
+luego hicimos el comando create database y el nombre biblioteca
+luego nos metemos en la base de datos biblioteca con \c biblioteca
+luego hacemos en la consola el script y le damos enter para correrlo
+ahi creamos los enums, las tablas y index basicos para pruebas
+y inserts de prueba de usuario y libro
+luego revisamos que se hayan creado correctamente con \d y \dT y \dt 

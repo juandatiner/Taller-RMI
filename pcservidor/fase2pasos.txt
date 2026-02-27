@@ -1,0 +1,83 @@
+primero actualizamos los paquetes
+luego instalamos toda la version de java 17 jdk con sudo apt install openjdk-17-jdk -y
+luego instalamos maven para las dependencias y el pom con sudo apt install maven -y
+luego creamois la carpeta de el proyectio en /documentos/a
+luego le pusimos el coando dentro de la carpeta de proyecto: mvn archetype:generate y eso genero el pom.xml y la carpeta src
+luego actualizamos el pom con las dependencias que ibamos a utilizar que son:primero informacion basica del proyecto nombre del servidor, el dominio y la version actual, la segunda es las versiones de java en este caso 17 poniendo la version especifica 1.64, y la version del protobuf,tercero las dependencias de gRPC osea de la capa de comunicacion, dice que implementa el servidor http/2, usa netty como el motor de la red, y usa shaded para el empaquetado evitando conflictos de librerias esto permite que el servidor escuche las conexiones gRPC, tambien hay una dependencia grpc-protobuf para serializar y deserializar usando protocol buffer convierte de java a protobuf, grpc-stub genera las clases para el cliente y servidor, cuarto las dependencias de servlets para anotaciones en java en pocas palabras una libreria de java, quinto esta la dependencia de postgre para conectarse a postgre, sexto detectar el sistema operativo para poder instalar los ejectuables del protobuf(serializacion de los datos para traducirlos en otros lenguajes), septimo el plugin del protobuf que descarga el compilador protobuf y genera el codigo del gRPC automnaticamente cuando se ejecuta el maven, octavo esta el maven plugin permite ejecutar las clases de java o scripts especificos del proyecto, noveno 
+basicamente el pom define la capa de comunicacion la capa de logica y la capa de datos. basicamente (gRPC, la parte de java, postgre)
+luego definimos la arquitectura del servidor 
+luego creamos el .proto basicamente es el contrato de la Api y gRPC,El cliente Python sabe exactamente qué enviar. El servidor Java sabe exactamente qué esperar.Ambos “hablan el mismo idioma”. El servidor de biblioteca ofrece estas funciones remotas y se definen las funciones y los datos que seran usados, es el contrato que ayuda a serializar los datos, los rpc son las acciones o funciones principales, los mensajes son los datos una estructura de datos definiendo los datos que se envian y se reciben es como una struct{} de c++ o una clase de java.
+luego lo compilamos con mvn compile para que actualize los archivos y este geenra un archivo target que se generan por el pom para ue Maven genera automáticamente al compilar el proyecto. y se generan las carpetas del poryecto, mejor dicho genera las carpetas de construccion con base a las dependencias que le dimos 
+luego creamos la implementacion vamos documents/a/biblioteca-server aqui esta carpeta_src carpeta_target y pom.xml/src/main carpeta_java carpeta_proto carpeta_resources/java/com/biblioteca/aqui estan las carpetas de java: que son business, db, repository, service, util, y serverMain.java(arranca el sistema abre el puerto 5051 registra el servicio gRPC y mantieen la sesion activa para las solicitudes, basicamente levanta el server y lo deja escuchando), en la carpeta service esta el archivo BibliotecaServiceImpl.java este Recibe la solicitud del cliente (en formato protobuf) Extrae los datos del request Llama a la capa de negocio Devuelve la respuesta al cliente Maneja errores y los convierte en errores gRPC, luego esta la carpeta business que es la logica principal del sistema donde estan los roles admin y cliente, aqui se definen los metodos de cada rol definiendo los servicios que tendra elc liente y el administrador, luego esta la carpeta repository este es el acceso a los datos es el sql puro aqui estan los datos de las clases libro prestamo y usuario encargandose de hacer las consultas sql y de devolver resultados no toma decisiones logicas solo gestion los datos de la base de datos obtenciond e datos y inserts, luego esta la carpeta db donde esta el archivo Db.java en esta esta la conexion a postgre, luego la carpeta util que tiene el manejo de excpeciones.
+en otras palabras:
+
+Cliente envía solicitud por gRPC
+
+Llega a service
+
+Service llama a SistemaCliente
+
+SistemaCliente:
+
+valida usuario
+
+valida estado del libro
+
+inicia transacción
+
+SistemaCliente llama a:
+
+LibroRepository
+
+PrestamoRepository
+
+Repository ejecuta SQL en PostgreSQL
+
+Resultado vuelve:
+repository → business → service → cliente
+
+Server main arranca
+service comunicacion grpc
+business decisiones del sistema
+repository gestion de sql
+db conexion a la base de datos
+util para manejo de errores o exceptions
+
+
+luego toca hacer mvn clean compile
+luego mvn -q exec:java -Dexec.mainClass="com.biblioteca.ServerMain" y con eso miramos si prende el server 
+luego verificamos que el puerto ss -tulnp | grep 50051 este escuchando y este conectado para recibir clientes
+
+
+con esto nuestro estadoi actual del servidor es:
+
+Servidor gRPC → OK
+Puerto → OK
+Proto → OK
+Compilación → OK
+Ejecución → OK
+
+luego nos metemos a la base de datos hacemos unos inserts de usuario y libro 
+hacemos una consulta revisando que se hayan creaod adecuadamente
+
+luego nos salimos de postgres nos volvemos a meter y hacemos \password para darle una contraseña al acceso a la base de datos, la constraseña es postgres.
+
+luego nos metemos al servidor y lo detenemos hacemos el archivo Db.java para establecer la conexion poniendo la clave d ela base de datos.
+
+luego toca hacer mvn clean compile
+
+luego nos metemos en los archivos fuentes de postgre, en: cd /etc/postgressql/14/main
+
+le damos ls para ver los archivos fuente 
+
+nos metemos en postgresql.conf y le cambiamos el puerto de local a que todos puedan acceder poniendole en la parte de listen adresses: listen_addresses = '*'
+y ademas nos toca modificar en esa misma carpeta este archivo: pg_hba.conf agregandole al final:host    biblioteca    postgres    10.43.100.90/32    md5 indicandole la ip del servidor de acceso
+
+luego reiniciamos postgre sudo systemctl restart postgresql
+y verificamos que este escuchando con: ss -tulnp | grep 5432
+
+luego de eso nos metemos al servidor y revisamos que se conecto adecduadamente con nc -vz 10.43.99.128 5432
+luego nos dio succed lo que sigue es instalar el cliente de postgre haciendo sudo apt update y sudo apt install postgresql -Client -y 
+luego probamos la conexion a la base de datos con psql -h 10.43.99.128 -u postgres -d biblioteca le ponemos el password y entramos en la base desde el cliente. cerramos la conexion en postgre 
+luego actualizamos el maven mvn clean compile
+y iniciamos el server 

@@ -1,0 +1,14 @@
+meterse al cliente .100.144
+meterse en terminal y hacer sudo update
+instalar dependencias python con sudo apt install python3-pipi -y
+creamos la carpeta del proyecto para el cliente en Documents/cliente-python
+meterse al servidor lo ponemos en activo y en otra consola copiamos el .proto al cliente con: scp estudiante@10.43.100.90:/home/estudiante/Documents/a/biblioteca-server/src/main/proto/biblioteca.proto .
+luego nos metemos en el cliente y generamos el codigo en python python3 -m grpc_tools.protoc -I. \
+  --python_out=. \
+  --grpc_python_out=. \
+  biblioteca.proto para generar el.proto
+  luego se crea el archivo cliente.py le ponemos toda la logica
+  lo ejecutamos python3 cliente.py
+
+
+  se hace lo mismo para los dos pcs 

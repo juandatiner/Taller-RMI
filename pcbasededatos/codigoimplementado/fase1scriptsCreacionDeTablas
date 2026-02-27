@@ -1,0 +1,100 @@
+-- =========================
+-- 1) ENUMS delimitadores de texto do$$ y end$$ 
+-- =========================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_libro') THEN
+    CREATE TYPE estado_libro AS ENUM ('disponible', 'prestado');
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'estado_prestamo') THEN
+    CREATE TYPE estado_prestamo AS ENUM ('activo', 'devuelto');
+  END IF;
+END$$;
+
+-- =========================
+-- 2) TABLA: usuario
+-- =========================
+CREATE TABLE IF NOT EXISTS usuario (
+  id_usuario  SERIAL PRIMARY KEY,
+  nombre      VARCHAR(100) NOT NULL,
+  apellido    VARCHAR(100) NOT NULL,
+  email       VARCHAR(150) NOT NULL UNIQUE,
+  telefono    VARCHAR(20)  -- recomendado como string (puede llevar +57, ceros, etc.)
+);
+
+-- =========================
+-- 3) TABLA: libro
+-- =========================
+CREATE TABLE IF NOT EXISTS libro (
+  isbn            VARCHAR(20) PRIMARY KEY,
+  titulo          VARCHAR(255) NOT NULL,
+  autor           VARCHAR(150) NOT NULL,
+  editorial       VARCHAR(150),
+  anio_publicacion INT,
+  estado          estado_libro NOT NULL DEFAULT 'disponible',
+
+  CONSTRAINT chk_anio_publicacion
+    CHECK (anio_publicacion IS NULL OR (anio_publicacion >= 0 AND anio_publicacion <= EXTRACT(YEAR FROM CURRENT_DATE)::INT + 1))
+);
+
+-- =========================
+-- 4) TABLA: prestamo
+-- =========================
+CREATE TABLE IF NOT EXISTS prestamo (
+  id_prestamo      SERIAL PRIMARY KEY,
+  id_usuario       INT NOT NULL,
+  isbn             VARCHAR(20) NOT NULL,
+
+  fecha_prestamo   DATE NOT NULL DEFAULT CURRENT_DATE,
+  fecha_devolucion DATE,
+  estado           estado_prestamo NOT NULL DEFAULT 'activo',
+
+  CONSTRAINT fk_prestamo_usuario
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_prestamo_libro
+    FOREIGN KEY (isbn) REFERENCES libro(isbn)
+    ON UPDATE CASCADE
+    ON DELETE RESTRICT,
+
+  -- Si el préstamo está "devuelto", debe haber fecha_devolucion.
+  -- Si está "activo", fecha_devolucion debe ser NULL (o al menos no obligatoria).
+  CONSTRAINT chk_prestamo_fechas
+    CHECK (
+      (estado = 'activo'  AND fecha_devolucion IS NULL)
+      OR
+      (estado = 'devuelto' AND fecha_devolucion IS NOT NULL)
+    )
+);
+
+-- =========================
+-- 5) REGLA DE CONCURRENCIA:
+-- Un mismo ISBN NO puede tener 2 préstamos activos simultáneamente
+-- (asumiendo 1 copia por ISBN)
+-- =========================
+CREATE UNIQUE INDEX IF NOT EXISTS uq_prestamo_isbn_activo
+ON prestamo (isbn)
+WHERE estado = 'activo';
+
+-- =========================
+-- 6) ÍNDICES ÚTILES (consultas típicas)
+-- =========================
+CREATE INDEX IF NOT EXISTS idx_prestamo_usuario
+ON prestamo (id_usuario);
+
+CREATE INDEX IF NOT EXISTS idx_prestamo_estado
+ON prestamo (estado);
+
+-- =========================
+-- 7) (Opcional) Datos de prueba mínimos
+-- =========================
+-- INSERT INTO usuario (nombre, apellido, email, telefono)
+-- VALUES ('Ana', 'Gomez', 'ana@demo.com', '+57 3000000000')
+-- ON CONFLICT (email) DO NOTHING;
+
+-- INSERT INTO libro (isbn, titulo, autor, editorial, anio_publicacion, estado)
+-- VALUES ('9781234567890', 'Sistemas Distribuidos', 'Tanenbaum', 'Pearson', 2017, 'disponible')
+-- ON CONFLICT (isbn) DO NOTHING;
