@@ -1,180 +1,181 @@
-Sistema Distribuido de Gestión de Préstamos
-Taller – Introducción a Sistemas Distribuidos
+# Taller 1 - Sistema de Biblioteca Distribuido
 
--Descripción-
+Sistema cliente-servidor para gestión de una biblioteca usando gRPC. El servidor está implementado en Java y el cliente en Python, con PostgreSQL como base de datos.
 
-Este repositorio contiene la implementación de un sistema distribuido cliente-servidor desarrollado como taller académico para la asignatura Introducción a Sistemas Distribuidos.
+## Arquitectura
 
-El sistema permite gestionar préstamos de libros mediante comunicación remota usando gRPC. Los componentes del sistema se ejecutan en máquinas virtuales independientes, garantizando separación física real entre:
+- **Base de datos:** PostgreSQL (máquina de base de datos)
+- **Servidor:** Java 17 + Maven + gRPC (máquina servidor)
+- **Cliente:** Python 3 + gRPC (máquina cliente)
 
-*Cliente
-*Servidor
-*Base de datos
+La comunicación entre cliente y servidor se realiza mediante gRPC con Protocol Buffers (`.proto`) como contrato de la API.
 
-La comunicación se realiza mediante gRPC sobre HTTP/2, utilizando Protocol Buffers como contrato de intercambio de datos.
+---
 
+## Fase 1 - Configuración de la base de datos
 
--Arquitectura-
+1. Actualizar paquetes del sistema:
+```bash
+sudo apt update
+```
 
-El sistema está compuesto por tres nodos principales:
+2. Instalar PostgreSQL:
+```bash
+sudo apt install postgresql
+```
 
---------------------------------------
-Cliente (Python)
-        │
-        v
-Servidor gRPC (Java 17)
-        │
-        v
-PostgreSQL (Base de Datos Remota)
---------------------------------------
+3. Ingresar a PostgreSQL:
+```bash
+sudo -u postgres psql
+```
 
-Características arquitectónicas:
+4. Crear la base de datos:
+```sql
+CREATE DATABASE biblioteca;
+```
 
-*Separación física de nodos
-*Comunicación remota estructurada
-*Interoperabilidad entre lenguajes (Java <-> Python)
-*Persistencia en base de datos remota
-*Arquitectura por capas en el servidor
+5. Conectarse a la base de datos:
+```sql
+\c biblioteca
+```
 
+6. Ejecutar el script de creación de tablas (archivo `fase1scriptsCreacionDeTablas`). Este script crea:
+   - Enums: `estado_libro`, `estado_prestamo`
+   - Tablas: `usuario`, `libro`, `prestamo` (con sus foreign keys y constraints)
+   - Índices para consultas y concurrencia
 
--Tecnologías Utilizadas-
+7. Verificar la creación:
+```sql
+\d    -- ver tablas
+\dT   -- ver tipos/enums
+\dt   -- ver tablas con detalle
+```
 
-*Java 17
-*Maven
-*gRPC
-*Protocol Buffers
-*Python 3
-*PostgreSQL
-*Linux (Máquinas Virtuales)
+8. Insertar datos de prueba (archivo `inserts usuario`).
 
--Estructura del Proyecto-
-	-Servidor (Java)-
+---
 
-		*Implementación del servicio gRPC
-		*Lógica de negocio
-		*Acceso a datos (DAO)
-		*Conexión a PostgreSQL
+## Fase 2 - Configuración del servidor (Java + gRPC)
 
-	-Cliente (Python)-
+### Instalación de dependencias
 
-		*Stub generado desde archivo .proto
-		*Invocación de servicios remotos
-		*Manejo de respuestas
+1. Actualizar paquetes:
+```bash
+sudo apt update
+```
 
-	-Base de Datos (PostgreSQL)-
+2. Instalar Java 17 y Maven:
+```bash
+sudo apt install openjdk-17-jdk -y
+sudo apt install maven -y
+```
 
-		*Tablas principales:
-			*usuario
-			*libro
-			*prestamo
+### Creación del proyecto
 
-		Incluye:
+3. Crear la carpeta del proyecto (ej: `Documents/a`) y dentro de ella generar el proyecto Maven:
+```bash
+mvn archetype:generate
+```
 
-			*Claves primarias
-			*Claves foráneas
-			*Restricciones CHECK
-			*Restricciones UNIQUE
-			*Tipos ENUM
+4. Actualizar el `pom.xml` con las dependencias necesarias:
+   - gRPC (netty-shaded, protobuf, stub)
+   - Servlets (anotaciones Java)
+   - Driver PostgreSQL
+   - Plugin de protobuf (compilador y generación de código gRPC)
+   - Plugin de Maven para ejecución
 
--Funcionalidades-
+### Estructura del servidor
 
-*Registrar libros
-*Consultar libros disponibles
-*Buscar libros por criterios
-*Registrar préstamos
-*Consultar préstamos activos
-*Devolver libros
-*Eliminar libros
+El código fuente se organiza en `src/main/java/com/biblioteca/`:
 
--Validaciones Implementadas-
+- `ServerMain.java` — Arranca el servidor en el puerto 50051 y lo deja escuchando
+- `service/` — Recibe solicitudes gRPC, llama a la capa de negocio y devuelve respuestas
+- `business/` — Lógica del sistema (roles admin y cliente)
+- `repository/` — Acceso a datos, consultas SQL puras
+- `db/` — Conexión a PostgreSQL
+- `util/` — Manejo de excepciones
 
-*ISBN único
-*Un libro no puede tener más de un préstamo activo
-*No se permite préstamo para usuario inexistente
-*Restricción sobre año de publicación
-*Manejo estructurado de errores
-*Validación de integridad referencial
+El archivo `.proto` se ubica en `src/main/proto/` y define el contrato de la API (funciones RPC y mensajes).
 
--Puertos Utilizados-
----------------------------------
-Servicio	|	Puerto
-gRPC Server	|	50051
-PostgreSQL	|	5432
----------------------------------
+### Compilación y ejecución
 
--Ejecución-
+5. Compilar el proyecto:
+```bash
+mvn clean compile
+```
 
-	-Iniciar PostgreSQL-
-	Asegurar que el servidor de base de datos esté activo y configurado para conexiones remotas.
-
-	-Ejecutar Servidor gRPC-
-	mvn clean install
-	mvn exec:java
-
-	-Ejecutar Cliente Python-
-	python cliente.py
-
--Objetivo Académico-
-
-Este taller tiene como propósito aplicar los fundamentos de los sistemas distribuidos mediante:
-
-*Implementación real de comunicación RPC
-*Separación física de componentes
-*Configuración de red entre máquinas virtuales
-*Integración de tecnologías heterogéneas
-*Persistencia remota de datos
-
--------------------------------------------------------------
-Autores:
-
-*Juan FElipe Gutierrez				|
-*Juan Santamaría Orjuela					|
-*Juan David Daza Caro						|
-*Juan David Rincón Muñoz					|
--------------------------------------------------------------
-*Ingeniería de Sistemas						|
-*Asignatura: Introducción a Sistemas Distribuidos		|
--------------------------------------------------------------
---Comandos
--- Conexion base de datos
-psql -U postgres -d biblioteca
--- Ver tablas
-\dt
-
--- Ver estructura
-\d usuario
-\d libro
-\d prestamo
-
--- Consultar información
-SELECT * FROM usuario;
-SELECT * FROM libro;
-SELECT * FROM prestamo;
-
--- Ver libros disponibles
-SELECT * FROM libro WHERE estado = 'disponible';
-
--- Ver préstamos activos
-SELECT * FROM prestamo WHERE estado = 'activo';
-
--- Ver conexiones activas del sistema
-SELECT client_addr, state
-FROM pg_stat_activity
-WHERE datname = 'biblioteca';
-
--- Salir
-\q
--- verificar que ets econectado
-ss -tulnp | grep 5432
--- compilar el proyecto 
-mvn -q clean compile
--- ejecutar el servidor
+6. Iniciar el servidor:
+```bash
 mvn -q exec:java -Dexec.mainClass="com.biblioteca.ServerMain"
--- verificar que el servidor este escuchando las peticiones
-ss -tulmp | grep 50051
---ver conexiones activas de la base d edtaos
-ss -tn | grep 5432
+```
 
---cliente
---correr el codigo
+7. Verificar que el puerto esté escuchando:
+```bash
+ss -tulnp | grep 50051
+```
+
+### Configuración de acceso remoto a PostgreSQL
+
+8. Asignar contraseña al usuario postgres:
+```bash
+sudo -u postgres psql
+\password
+```
+Contraseña: `postgres`
+
+9. Actualizar `Db.java` con la contraseña de la base de datos y recompilar:
+```bash
+mvn clean compile
+```
+
+10. Editar la configuración de PostgreSQL en `/etc/postgresql/14/main/`:
+    - En `postgresql.conf`, cambiar: `listen_addresses = '*'`
+    - En `pg_hba.conf`, agregar al final: `host    biblioteca    postgres    <IP_SERVIDOR>/32    md5`
+
+11. Reiniciar PostgreSQL y verificar:
+```bash
+sudo systemctl restart postgresql
+ss -tulnp | grep 5432
+```
+
+12. Desde el servidor, verificar conectividad a la base de datos:
+```bash
+nc -vz <IP_BASE_DATOS> 5432
+```
+
+13. Instalar cliente PostgreSQL en el servidor para pruebas:
+```bash
+sudo apt install postgresql-client -y
+psql -h <IP_BASE_DATOS> -U postgres -d biblioteca
+```
+
+---
+
+## Fase 3 - Configuración del cliente (Python)
+
+1. Actualizar paquetes e instalar pip:
+```bash
+sudo apt update
+sudo apt install python3-pip -y
+```
+
+2. Crear la carpeta del proyecto (ej: `Documents/cliente-python`).
+
+3. Con el servidor activo, copiar el archivo `.proto` desde el servidor:
+```bash
+scp estudiante@<IP_SERVIDOR>:/home/estudiante/Documents/a/biblioteca-server/src/main/proto/biblioteca.proto .
+```
+
+4. Generar el código gRPC en Python:
+```bash
+python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. biblioteca.proto
+```
+
+5. Crear el archivo `cliente.py` con la lógica del cliente.
+
+6. Ejecutar el cliente:
+```bash
 python3 cliente.py
+```
+
+Repetir estos pasos en cada máquina cliente que se quiera configurar.
